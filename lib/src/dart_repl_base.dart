@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 
+import 'package:dart_repl/src/keywords.dart';
 import 'package:path/path.dart' as p;
 
 /* TODO(komposten): Maybe add support for some codes like Ctrl+L for clearing screen.
@@ -21,11 +22,6 @@ n */
 class DartRepl {
   static const String prompt = '   > ';
   static const String echoPrompt = '   | ';
-  static const String statementEval = 'eval;';
-  static const String statementEnd = 'end;';
-  static const String statementExit = 'exit;';
-  static const String statementUndo = 'undo;';
-  static const String statementEcho = 'echo;';
   static const String isolateCompleted = 'completed';
 
   String _cachedSegment = '';
@@ -37,7 +33,7 @@ class DartRepl {
     while (true) {
       segment = _readSegment();
 
-      if (segment == statementExit) {
+      if (segment == Keyword.exit.keyword) {
         break;
       }
 
@@ -49,43 +45,53 @@ class DartRepl {
   }
 
   String _readSegment() {
+    var finished = false;
     var segment = _cachedSegment;
 
-    while (true) {
+    while (!finished) {
       _printPrompt();
 
       var line = stdin.readLineSync();
-      var lineTrimmed = line.trim();
+      var keyword = Keywords.findKeyword(line);
 
-      if (lineTrimmed == statementExit) {
-        segment = statementExit;
-        break;
-      } else if (lineTrimmed == statementEcho) {
-        stdout.write('========');
-        stdout.writeln(_addLineNumbers(segment));
-      } else if (lineTrimmed == statementUndo) {
-        // Remove everything after the last newline in segment.
-        // This will remove the line added before undo was triggered.
-        segment = segment.substring(0, segment.lastIndexOf('\n'));
-        _lines--;
-
-        // Move the cursor up one line to the undo command and clear that line.
-        // Then move it up again to the line we want to undo, and clear that line as well.
-        stdout.write('\u001b[F\u001b[K\u001b[F\u001b[K');
-      } else {
-        segment += '\n$line';
-        _lines++;
-
-        if (lineTrimmed.endsWith(statementEnd)) {
-          segment = _removeStatement(segment, statementEnd);
+      switch (keyword) {
+        case Keyword.end:
+          segment = _removeKeyword('$segment\n$line', Keyword.end.keyword);
           _cachedSegment = '';
           _lines = 0;
+          finished = true;
           break;
-        } else if (lineTrimmed.endsWith(statementEval)) {
-          segment = _removeStatement(segment, statementEval);
+
+        case Keyword.eval:
+          segment = _removeKeyword('$segment\n$line', Keyword.eval.keyword);
           _cachedSegment = segment;
+          finished = true;
           break;
-        }
+
+        case Keyword.exit:
+          segment = Keyword.exit.keyword;
+          finished = true;
+          break;
+
+        case Keyword.echo:
+          stdout.write('========');
+          stdout.writeln(_addLineNumbers(segment));
+          break;
+
+        case Keyword.undo:
+          // Remove everything after the last newline in segment.
+          // This will remove the line added before undo was triggered.
+          segment = segment.substring(0, segment.lastIndexOf('\n'));
+          _lines--;
+
+          // Move the cursor up one line to the undo command and clear that line.
+          // Then move it up again to the line we want to undo, and clear that line as well.
+          stdout.write('\u001b[F\u001b[K\u001b[F\u001b[K');
+          break;
+
+        default:
+          segment += '\n$line';
+          _lines++;
       }
     }
 
@@ -119,9 +125,9 @@ class DartRepl {
     return '$numberString\u001b[1;32m${prompt.substring(promptStart)}\u001b[0m';
   }
 
-  String _removeStatement(String segment, String statement) {
-    statement = RegExp.escape(statement);
-    return segment.replaceAll(RegExp('\\s?$statement\$'), '');
+  String _removeKeyword(String segment, String keyword) {
+    keyword = RegExp.escape(keyword);
+    return segment.replaceAll(RegExp('\\s?$keyword\$'), '');
   }
 
   Future<void> _eval(String segment) async {
