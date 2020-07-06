@@ -44,18 +44,18 @@ Here is a list of all available keywords and their effects:
 
 ```bash
 $ dart_repl
->> print('Hello World!');
->> end;
+1  > print('Hello World!');
+2  > end;
 Hello World!
 
->> // A new code block starts here.
->> print('Let\'s try eval!');
->> eval;
+1  > // A new code block starts here.
+2  > print('Let\'s try eval!');
+3  > eval;
 Let's try eval!
 
->> // We're still in the same code block.
->> print('o_o');
->> end;
+4  > // We're still in the same code block.
+5  > print('o_o');
+6  > end;
 Let's try eval!
 o_o
 ```
