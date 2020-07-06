@@ -79,14 +79,22 @@ class DartRepl {
           break;
 
         case Keyword.undo:
+          // Move the cursor up one line to the undo command and clear that line.
+          stdout.write('\u001b[F\u001b[K');
+
           // Remove everything after the last newline in segment.
           // This will remove the line added before undo was triggered.
-          segment = segment.substring(0, segment.lastIndexOf('\n'));
-          _lines--;
+          var lastNewline = segment.lastIndexOf('\n');
+          if (lastNewline >= 0) {
+            // Move it up again to the line we want to undo, and clear that line as well.
+            stdout.write('\u001b[F\u001b[K');
 
-          // Move the cursor up one line to the undo command and clear that line.
-          // Then move it up again to the line we want to undo, and clear that line as well.
-          stdout.write('\u001b[F\u001b[K\u001b[F\u001b[K');
+            segment = segment.substring(0, lastNewline);
+            _lines--;
+          } else {
+            segment = '';
+            _lines = 0;
+          }
           break;
 
         case Keyword.clear:
