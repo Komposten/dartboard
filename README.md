@@ -39,6 +39,7 @@ Here is a list of all available keywords and their effects:
 - `exit;` - Terminates dart_repl. Must be written on its own line.
 - `undo;` - Removes the last line from the current code block. Must be written on its own line.
 - `echo;` - Prints all lines of the current code block. Must be written on its own line.
+- `clear;` - Clears the current code block without executing the code.
 
 #### A simple usage example:
 

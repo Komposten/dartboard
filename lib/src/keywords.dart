@@ -18,8 +18,9 @@ class Keyword {
   static const exit = Keyword._internal('exit;', true);
   static const undo = Keyword._internal('undo;', true);
   static const echo = Keyword._internal('echo;', true);
+  static const clear = Keyword._internal('clear;', true);
 
-  static const _values = [end, eval, exit, undo, echo];
+  static const _values = [end, eval, exit, undo, echo, clear];
 
   static List<Keyword> get values => _values;
 

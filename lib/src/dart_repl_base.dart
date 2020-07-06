@@ -89,6 +89,11 @@ class DartRepl {
           stdout.write('\u001b[F\u001b[K\u001b[F\u001b[K');
           break;
 
+        case Keyword.clear:
+          segment = '';
+          _lines = 0;
+          break;
+
         default:
           segment += '\n$line';
           _lines++;
