@@ -148,7 +148,7 @@ class DartRepl {
     // Remove characters from the start of the prompt so the number fits.
     var promptStart = min(numberString.length, prompt.length - 2);
 
-    return '$numberString\u001b[1;32m${prompt.substring(promptStart)}\u001b[0m';
+    return '$numberString${Csi.green}${prompt.substring(promptStart)}${Csi.plain}';
   }
 
   Future<void> _eval(List<String> segment) async {
@@ -159,4 +159,6 @@ class DartRepl {
 class Csi {
   static const up = '\x1b[F';
   static const clearLine = '\x1b[K';
+  static const green = '\x1b[1;32m';
+  static const plain = '\x1b[0m';
 }
