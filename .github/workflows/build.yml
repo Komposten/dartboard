@@ -54,4 +54,4 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Check format
-        run: dartfmt -n .
+        run: dartfmt -n --set-exit-if-changed .
