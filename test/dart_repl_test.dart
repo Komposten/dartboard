@@ -52,8 +52,6 @@ void main() {
            Solution: Maybe pass in a "last statement" parameter which we can look for
            after the final command?
        */
-      print(output.map((e) => '"$e"'));
-
       expect(output[0], equals('1  > '));
       expect(output[1], equals('2  > '));
       expect(output[2], equals('3  > '));
@@ -186,8 +184,6 @@ Future<List<String>> _runCommands(
   processOut.listen((line) {
     // Remove ANSI colour tags
     line = line.replaceAll(RegExp('\x1b\\[[^\x1b]+?m'), '');
-
-    print('Output: "${line.replaceAll('\x1b', 'ESC')}"');
 
     // Add the line to the currentBlock block
     currentBlock += line;
