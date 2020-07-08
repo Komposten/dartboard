@@ -101,9 +101,70 @@ void main() {
           equals('${Csi.up}${Csi.clearLine}${Csi.up}${Csi.clearLine}2  > '));
     });
 
-    /*
-      TODO(komposten): Write more tests.
-     */
+    test('Test clear', () async {
+      var commands = ['var x = 5;', 'print(x);', 'clear;', 'echo;'];
+      var output = await _runCommands(
+          commands, [1, 1, 1, 1, 2], process.stdin, processOut);
+
+      expect(output[0], equals('1  > '));
+      expect(output[1], equals('2  > '));
+      expect(output[2], equals('3  > '));
+      expect(output[3], equals('1  > '));
+      // Check the echo output to verify that code was cleared.
+      expect(output[4], equals('========'));
+      expect(output[5], equals('1  > '));
+    });
+
+    test('Test delete', () async {
+      var commands = ['var x = 5;', 'var y = 10;', 'print(x);', 'delete:2;'];
+      var output = await _runCommands(
+          commands, [1, 1, 1, 1, 4], process.stdin, processOut);
+
+      expect(output[0], equals('1  > '));
+      expect(output[1], equals('2  > '));
+      expect(output[2], equals('3  > '));
+      expect(output[3], equals('4  > '));
+      expect(output[4], equals('========'));
+      expect(output[5], equals('1  | var x = 5;'));
+      expect(output[6], equals('2  | print(x);'));
+      expect(output[7], equals('3  > '));
+    });
+
+    test('Test insert', () async {
+      var commands = ['var x = 5;', 'print(x);', 'insert:2;var y = 10;'];
+      var output =
+          await _runCommands(commands, [1, 1, 1, 5], process.stdin, processOut);
+
+      expect(output[0], equals('1  > '));
+      expect(output[1], equals('2  > '));
+      expect(output[2], equals('3  > '));
+      expect(output[3], equals('========'));
+      expect(output[4], equals('1  | var x = 5;'));
+      expect(output[5], equals('2  | var y = 10;'));
+      expect(output[6], equals('3  | print(x);'));
+      expect(output[7], equals('4  > '));
+    });
+
+    test('Test edit', () async {
+      var commands = [
+        'var x = 5;',
+        'var y = 10;',
+        'print(x);',
+        'edit:2;var z = 15;'
+      ];
+      var output = await _runCommands(
+          commands, [1, 1, 1, 1, 5], process.stdin, processOut);
+
+      expect(output[0], equals('1  > '));
+      expect(output[1], equals('2  > '));
+      expect(output[2], equals('3  > '));
+      expect(output[3], equals('4  > '));
+      expect(output[4], equals('========'));
+      expect(output[5], equals('1  | var x = 5;'));
+      expect(output[6], equals('2  | var z = 15;'));
+      expect(output[7], equals('3  | print(x);'));
+      expect(output[8], equals('4  > '));
+    });
 
     tearDown(() {
       process?.kill();
