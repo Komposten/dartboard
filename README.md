@@ -1,5 +1,7 @@
 # dart_repl
 
+[![Dart CI](https://github.com/Komposten/dart_repl/workflows/Dart%20CI/badge.svg)](https://github.com/Komposten/dart_repl/actions?query=workflow%3A"Dart+CI")
+
 **A REPL interface for executing dart code directly from the command line.**
 
 dart_repl provides an executable which can be used as an interactive command line shell, similar to how you can run `python` in a terminal to get an interactive python prompt.
