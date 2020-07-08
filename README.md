@@ -40,6 +40,9 @@ Here is a list of all available keywords and their effects:
 - `undo;` - Removes the last line from the current code block. Must be written on its own line.
 - `echo;` - Prints all lines of the current code block. Must be written on its own line.
 - `clear;` - Clears the current code block without executing the code.
+- `insert:#;<code>` - Inserts `<code>` at line `#`.
+- `edit:#;<code>` - Replaces the code at line `#` with `<code>`.
+- `delete:#;` - Deletes the code at line `#`.
 
 #### A simple usage example:
 
