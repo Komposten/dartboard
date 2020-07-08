@@ -6,7 +6,7 @@ import 'package:dart_repl/dart_repl.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('dart_repl tests', () {
+  group('Keyword tests', () {
     Process process;
     Stream<String> processOut;
 
