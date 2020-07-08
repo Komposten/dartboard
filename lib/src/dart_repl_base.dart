@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 
+import 'package:dart_repl/src/evaluator.dart';
 import 'package:dart_repl/src/keywords.dart';
 import 'package:path/path.dart' as p;
 
@@ -16,10 +17,12 @@ n */
 class DartRepl {
   static const String prompt = '   > ';
   static const String echoPrompt = '   | ';
-  static const String isolateCompleted = 'completed';
 
+  final Evaluator _evaluator;
   final List<String> _cachedSegment = <String>[];
   int _lines = 0;
+
+  DartRepl() : _evaluator = Evaluator();
 
   void run() async {
     List<String> segment;
@@ -27,7 +30,7 @@ class DartRepl {
     while (true) {
       segment = _readSegment();
 
-      if (segment.first == Keyword.exit.value) {
+      if (segment.isNotEmpty && segment.first == Keyword.exit.value) {
         break;
       }
 
@@ -151,67 +154,6 @@ class DartRepl {
   }
 
   Future<void> _eval(List<String> segment) async {
-    var tempFile = _createCodeFile(segment);
-    await _evalInIsolate(tempFile);
-  }
-
-  File _createCodeFile(List<String> segment) {
-    //TODO(komposten): Place import statements before the main method.
-    //TODO(komposten): Handle exceptions. E.g. `var x; print(x + 1);`
-    var code = '''
-      import 'dart:isolate';
-    
-      void main(_, SendPort port) {
-        ${segment.join('\n')}
-        
-        port.send('$isolateCompleted');
-      }
-      ''';
-
-    final tempDir = _getTempDir();
-    final tempFile = File(p.join(tempDir.path, 'script.dart'));
-
-    tempFile.createSync();
-    tempFile.writeAsStringSync(code);
-    return tempFile;
-  }
-
-  Directory _getTempDir() {
-    final parentPath = p.join(Directory.systemTemp.path, 'dart_repl');
-    final parentDir = Directory(parentPath);
-
-    if (!parentDir.existsSync()) {
-      parentDir.createSync();
-    }
-
-    return parentDir.createTempSync();
-  }
-
-  Future _evalInIsolate(File tempFile) async {
-    final uri = Uri.file(tempFile.path);
-    final messagePort = ReceivePort();
-    final completer = Completer();
-
-    messagePort.listen((_) => _onIsolateMessage(_, completer));
-
-    try {
-      await Isolate.spawnUri(uri, [], messagePort.sendPort);
-    } on IsolateSpawnException catch (e) {
-      var message = e.message;
-      message = message.replaceAll(
-          RegExp(r'^.+script\.dart:\d+:\d+:\s*', multiLine: true), '');
-      print('$message');
-
-      completer.complete();
-    }
-
-    // Wait for the isolate to finish.
-    await completer.future;
-  }
-
-  void _onIsolateMessage(dynamic message, Completer completer) {
-    if (message == isolateCompleted) {
-      completer.complete();
-    }
+    await _evaluator.evaluate(segment);
   }
 }
