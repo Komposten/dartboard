@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:math';
 
 import 'package:dart_repl/src/evaluator.dart';
 import 'package:dart_repl/src/keywords.dart';
-import 'package:path/path.dart' as p;
 
 /* TODO(komposten): Maybe add support for some codes like Ctrl+L for clearing screen.
     Will have to read character-by-character for that.

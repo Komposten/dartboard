@@ -12,8 +12,7 @@ class Evaluator {
   String _code;
   int _offset;
 
-  Evaluator()
-      : _template = _loadTemplate();
+  Evaluator() : _template = _loadTemplate();
 
   static String _loadTemplate() {
     var dartReplDir = p.dirname(Platform.script.toFilePath());
@@ -30,7 +29,9 @@ class Evaluator {
   void _prepareCode(List<String> lines) {
     var imports = <String>[];
 
-    imports = lines.where((element) => element.trimLeft().startsWith('import')).toList();
+    imports = lines
+        .where((element) => element.trimLeft().startsWith('import'))
+        .toList();
     imports.forEach((import) => lines.remove(import));
 
     var importString = imports.join('\n');
@@ -41,7 +42,8 @@ class Evaluator {
     // Count the number of lines before //code//
     _offset = _linesBefore('//code//', _template);
     // Add the code and finish message
-    _code = _code.replaceFirst('//code//', codeString)
+    _code = _code
+        .replaceFirst('//code//', codeString)
         .replaceFirst('//messageFinished//', isolateCompleted);
   }
 
