@@ -1,0 +1,57 @@
+name: Dart CI
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - release-*
+  pull_request:
+    branches:
+      - master
+      - develop
+      - release-*
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+
+    container:
+      image:  google/dart:latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      run: pub get
+    - name: Run tests
+      run: pub run test
+
+  analyse:
+    name: Code analysis
+    runs-on: ubuntu-latest
+
+    container:
+      image:  google/dart:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: pub get
+      - name: Run analyser
+        run: dartanalyzer bin lib test
+
+  format:
+    name: Code format
+    runs-on: ubuntu-latest
+
+    container:
+      image:  google/dart:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Check format
+        run: dartfmt -n .
