@@ -47,13 +47,20 @@ class Keyword {
 
   static final Keyword end = Keyword._internal('end', _KeywordType.Suffix);
   static final Keyword eval = Keyword._internal('eval', _KeywordType.Suffix);
-  static final Keyword exit = Keyword._internal('exit', _KeywordType.Standalone);
-  static final Keyword undo = Keyword._internal('undo', _KeywordType.Standalone);
-  static final Keyword echo = Keyword._internal('echo', _KeywordType.Standalone);
-  static final Keyword clear = Keyword._internal('clear', _KeywordType.Standalone);
-  static final Keyword delete = Keyword._internal('delete', _KeywordType.Prefix, indices: 1);
-  static final Keyword insert = Keyword._internal('insert', _KeywordType.Prefix, indices: 1);
-  static final Keyword edit = Keyword._internal('edit', _KeywordType.Prefix, indices: 1);
+  static final Keyword exit =
+      Keyword._internal('exit', _KeywordType.Standalone);
+  static final Keyword undo =
+      Keyword._internal('undo', _KeywordType.Standalone);
+  static final Keyword echo =
+      Keyword._internal('echo', _KeywordType.Standalone);
+  static final Keyword clear =
+      Keyword._internal('clear', _KeywordType.Standalone);
+  static final Keyword delete =
+      Keyword._internal('delete', _KeywordType.Prefix, indices: 1);
+  static final Keyword insert =
+      Keyword._internal('insert', _KeywordType.Prefix, indices: 1);
+  static final Keyword edit =
+      Keyword._internal('edit', _KeywordType.Prefix, indices: 1);
 
   static final _values = [
     end,
@@ -83,7 +90,8 @@ class Keyword {
     return result;
   }
 
-  static RegExp _generatePattern(String value, _KeywordType _type, int _indices) {
+  static RegExp _generatePattern(
+      String value, _KeywordType _type, int _indices) {
     var pattern = value;
 
     for (var i = 0; i < _indices; i++) {
