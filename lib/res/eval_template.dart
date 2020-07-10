@@ -1,24 +1,32 @@
+import 'dart:async';
 import 'dart:isolate';
 
 //imports//
 
+String path;
 int offset;
 
 void main(List<String> args, SendPort port) {
-  var path = args[0];
+  path = args[0];
   offset = int.tryParse(args[1]) ?? 0;
 
-  try {
-    // All user-provided code goes here.
-    //code//
-  } catch (e, stackTrace) {
-    handleError(e, stackTrace, path);
-  }
+  // Run the user code in a zone to capture its output and pass that to the send port.
+  runZoned(
+    _main,
+    zoneSpecification: ZoneSpecification(
+      print: (self, parent, zone, line) => port.send(line),
+    ),
+    onError: handleError,
+  );
 
   port.send('//messageFinished//');
 }
 
-void handleError(e, StackTrace stackTrace, String path) {
+void _main() {
+  //code//
+}
+
+void handleError(e, StackTrace stackTrace) {
   path = RegExp.escape(path).replaceAll(r'\\', r'[\/\\]');
   var pathPattern = RegExp(r'(file:.+' + path + r'):(\d+):(\d+)');
   var traceString = stackTrace.toString();

@@ -8,11 +8,14 @@ class Evaluator {
   static const String isolateCompleted = 'completed';
 
   final String _template;
+  final StreamSink<String> _outputSink;
 
   String _code;
   int _offset;
 
-  Evaluator() : _template = _loadTemplate();
+  Evaluator({StreamSink<String> outputSink})
+      : _outputSink = outputSink,
+        _template = _loadTemplate();
 
   static String _loadTemplate() {
     var dartReplDir = p.dirname(Platform.script.toFilePath());
@@ -100,6 +103,12 @@ class Evaluator {
   void _onIsolateMessage(dynamic message, Completer completer) {
     if (message == isolateCompleted) {
       completer.complete();
+    } else {
+      if (_outputSink != null) {
+        _outputSink.add('$message\n');
+      } else {
+        print(message);
+      }
     }
   }
 }

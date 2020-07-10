@@ -8,10 +8,6 @@ import 'package:dart_repl/src/keywords.dart';
 
 /* TODO(komposten): Maybe add support for some codes like Ctrl+L for clearing screen.
     Will have to read character-by-character for that.
-
-   TODO(komposten): Add an option to specify input stream.
-    Maybe also output stream. Would require zone-age in the Isolate, though, to
-    pipe it's output to the correct place.
 n */
 class DartRepl {
   static const String prompt = '   > ';
@@ -19,14 +15,16 @@ class DartRepl {
 
   final Evaluator _evaluator;
   final List<String> _cachedSegment = <String>[];
+  final StreamSink<String> _outputSink;
   final Stream<String> _inputStream;
   final Queue<String> _inputQueue = ListQueue();
   Completer<String> _inputCompleter;
 
   int _lines = 0;
 
-  DartRepl({Stream<String> inputStream})
-      : _inputStream = inputStream,
+  DartRepl({StreamSink<String> outputSink, Stream<String> inputStream})
+      : _outputSink = outputSink,
+        _inputStream = inputStream,
         _evaluator = Evaluator() {
     if (_inputStream != null) {
       _inputStream.listen((event) {
@@ -50,7 +48,7 @@ class DartRepl {
       }
 
       await _eval(segment);
-      stdout.writeln();
+      println();
     }
 
     exit(0);
@@ -93,11 +91,11 @@ class DartRepl {
         _echo(segment);
       } else if (keyword == Keyword.undo) {
         // Move the cursor up one line to the undo command and clear that line.
-        stdout.write('${Csi.up}${Csi.clearLine}');
+        print('${Csi.up}${Csi.clearLine}');
 
         if (segment.isNotEmpty) {
           // Move it up again to the line we want to undo, and clear that line as well.
-          stdout.write('${Csi.up}${Csi.clearLine}');
+          print('${Csi.up}${Csi.clearLine}');
           segment.removeLast();
           _lines--;
         }
@@ -158,12 +156,12 @@ class DartRepl {
 
   void _printPrompt() {
     var lineNumber = _lines + 1;
-    stdout.write(_numberedPrompt(lineNumber, prompt));
+    print(_numberedPrompt(lineNumber, prompt));
   }
 
   void _echo(List<String> segment) {
-    stdout.write('========');
-    stdout.writeln(_addLineNumbers(segment));
+    print('========');
+    println(_addLineNumbers(segment));
   }
 
   String _addLineNumbers(List<String> segment) {
@@ -189,6 +187,19 @@ class DartRepl {
 
   Future<void> _eval(List<String> segment) async {
     await _evaluator.evaluate(segment);
+  }
+
+  void println([String message]) {
+    print('${message ?? ''}\n');
+  }
+
+  void print([String message]) {
+    message = message ?? '';
+    if (_outputSink != null) {
+      _outputSink.add(message);
+    } else {
+      stdout.write(message);
+    }
   }
 }
 
