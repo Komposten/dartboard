@@ -23,8 +23,8 @@ void main() {
 
     test('Test echo', () async {
       var commands = ['var x = 5;', 'print(x);', 'echo;'];
-      var output =
-          await _runCommands(commands, [1, 1, 1, 4], process.stdin, processOut);
+      var output = await _runCommands(
+          commands, [1, 1, 1, 4], 5, process.stdin, processOut);
 
       expect(output[0], equals('1  > '));
       expect(output[1], equals('2  > '));
@@ -38,20 +38,9 @@ void main() {
 
     test('Test end', () async {
       var commands = ['var x = 5;', 'print(x);', 'end;'];
-      var output =
-          await _runCommands(commands, [1, 1, 1, 3], process.stdin, processOut);
+      var output = await _runCommands(
+          commands, [1, 1, 1, 3], 5, process.stdin, processOut);
 
-      /* TODO(komposten): There is still a concurrency bug!
-           It sometimes happens that we get: ("1  > ", "2  > ", "3  > ", "5", "", "")
-           instead of: ("1  > ", "2  > ", "3  > ", "5", "", "1  > ")
-           .
-           This is because the final newline and prompt are printed in separate statements.
-           So, if we receive stdout between these statements, we return from _runCommands
-           with an empty string in the last spot instead of the expected prompt.
-           .
-           Solution: Maybe pass in a "last statement" parameter which we can look for
-           after the final command?
-       */
       expect(output[0], equals('1  > '));
       expect(output[1], equals('2  > '));
       expect(output[2], equals('3  > '));
@@ -63,7 +52,7 @@ void main() {
     test('Test eval', () async {
       var commands = ['var x = 5;', 'print(x);', 'eval;', 'echo;'];
       var output = await _runCommands(
-          commands, [1, 1, 1, 3, 4], process.stdin, processOut);
+          commands, [1, 1, 1, 3, 4], 5, process.stdin, processOut);
 
       expect(output[0], equals('1  > '));
       expect(output[1], equals('2  > '));
@@ -81,7 +70,7 @@ void main() {
     test('Test undo with nothing to undo', () async {
       var commands = ['undo;'];
       var output =
-          await _runCommands(commands, [1, 1], process.stdin, processOut);
+          await _runCommands(commands, [1, 1], 5, process.stdin, processOut);
 
       expect(output[0], equals('1  > '));
       expect(output[1], equals('${Csi.up}${Csi.clearLine}1  > '));
@@ -89,8 +78,8 @@ void main() {
 
     test('Test undo with code to undo', () async {
       var commands = ['var x = 5;', 'print(x);', 'undo;'];
-      var output =
-          await _runCommands(commands, [1, 1, 1, 1], process.stdin, processOut);
+      var output = await _runCommands(
+          commands, [1, 1, 1, 1], 12, process.stdin, processOut);
 
       expect(output[0], equals('1  > '));
       expect(output[1], equals('2  > '));
@@ -102,7 +91,7 @@ void main() {
     test('Test clear', () async {
       var commands = ['var x = 5;', 'print(x);', 'clear;', 'echo;'];
       var output = await _runCommands(
-          commands, [1, 1, 1, 1, 2], process.stdin, processOut);
+          commands, [1, 1, 1, 1, 2], 5, process.stdin, processOut);
 
       expect(output[0], equals('1  > '));
       expect(output[1], equals('2  > '));
@@ -116,7 +105,7 @@ void main() {
     test('Test delete', () async {
       var commands = ['var x = 5;', 'var y = 10;', 'print(x);', 'delete:2;'];
       var output = await _runCommands(
-          commands, [1, 1, 1, 1, 4], process.stdin, processOut);
+          commands, [1, 1, 1, 1, 4], 5, process.stdin, processOut);
 
       expect(output[0], equals('1  > '));
       expect(output[1], equals('2  > '));
@@ -130,8 +119,8 @@ void main() {
 
     test('Test insert', () async {
       var commands = ['var x = 5;', 'print(x);', 'insert:2;var y = 10;'];
-      var output =
-          await _runCommands(commands, [1, 1, 1, 5], process.stdin, processOut);
+      var output = await _runCommands(
+          commands, [1, 1, 1, 5], 5, process.stdin, processOut);
 
       expect(output[0], equals('1  > '));
       expect(output[1], equals('2  > '));
@@ -151,7 +140,7 @@ void main() {
         'edit:2;var z = 15;'
       ];
       var output = await _runCommands(
-          commands, [1, 1, 1, 1, 5], process.stdin, processOut);
+          commands, [1, 1, 1, 1, 5], 5, process.stdin, processOut);
 
       expect(output[0], equals('1  > '));
       expect(output[1], equals('2  > '));
@@ -173,6 +162,7 @@ void main() {
 Future<List<String>> _runCommands(
     List<String> commands,
     List<int> linesPerCommand,
+    int lastLineLength,
     IOSink processIn,
     Stream<String> processOut) async {
   var commandCounter = 0;
@@ -190,14 +180,25 @@ Future<List<String>> _runCommands(
 
     // Split the block on newline characters
     var split2 = _split(currentBlock, '\n');
+    var isLastCommand = commandCounter == linesPerCommand.length - 1;
 
     // Check if the block has the correct amount of lines in it
     if (split2.length >= linesPerCommand[commandCounter]) {
-      result.addAll(split2);
-      currentBlock = '';
+      // If this is not the final command, or it's the final command and the last
+      // line has the expected length, complete.
+      if (!isLastCommand || split2.last.length >= lastLineLength) {
+        result.addAll(split2);
+        currentBlock = '';
 
-      if (!commandCompleter.isCompleted) {
-        commandCompleter.complete();
+        if (!commandCompleter.isCompleted) {
+          commandCompleter.complete();
+        }
+      }
+      // If it is the last command and we don't have the expected length,
+      // start a 1-second timer after which we time out the operation.
+      else if (isLastCommand) {
+        // Start a 1 second timer.
+        Future.delayed(Duration(seconds: 5), commandCompleter.complete);
       }
     }
   });
