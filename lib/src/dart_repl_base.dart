@@ -74,11 +74,11 @@ class DartRepl {
         _echo(segment);
       } else if (keyword == Keyword.undo) {
         // Move the cursor up one line to the undo command and clear that line.
-        stdout.write('\u001b[F\u001b[K');
+        stdout.write('${Csi.up}${Csi.clearLine}');
 
         if (segment.isNotEmpty) {
           // Move it up again to the line we want to undo, and clear that line as well.
-          stdout.write('\u001b[F\u001b[K');
+          stdout.write('${Csi.up}${Csi.clearLine}');
           segment.removeLast();
           _lines--;
         }
@@ -148,10 +148,17 @@ class DartRepl {
     // Remove characters from the start of the prompt so the number fits.
     var promptStart = min(numberString.length, prompt.length - 2);
 
-    return '$numberString\u001b[1;32m${prompt.substring(promptStart)}\u001b[0m';
+    return '$numberString${Csi.green}${prompt.substring(promptStart)}${Csi.plain}';
   }
 
   Future<void> _eval(List<String> segment) async {
     await _evaluator.evaluate(segment);
   }
+}
+
+class Csi {
+  static const up = '\x1b[F';
+  static const clearLine = '\x1b[K';
+  static const green = '\x1b[1;32m';
+  static const plain = '\x1b[0m';
 }
