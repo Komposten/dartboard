@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
 
@@ -18,15 +19,31 @@ class DartRepl {
 
   final Evaluator _evaluator;
   final List<String> _cachedSegment = <String>[];
+  final Stream<String> _inputStream;
+  final Queue<String> _inputQueue = ListQueue();
+  Completer<String> _inputCompleter;
+
   int _lines = 0;
 
-  DartRepl() : _evaluator = Evaluator();
+  DartRepl({Stream<String> inputStream})
+      : _inputStream = inputStream,
+        _evaluator = Evaluator() {
+    if (_inputStream != null) {
+      _inputStream.listen((event) {
+        if (_inputCompleter != null && !_inputCompleter.isCompleted) {
+          _inputCompleter.complete(event);
+        } else {
+          _inputQueue.add(event);
+        }
+      });
+    }
+  }
 
   void run() async {
     List<String> segment;
 
     while (true) {
-      segment = _readSegment();
+      segment = await _readSegment();
 
       if (segment.isNotEmpty && segment.first == Keyword.exit.value) {
         break;
@@ -39,14 +56,15 @@ class DartRepl {
     exit(0);
   }
 
-  List<String> _readSegment() {
+  Future<List<String>> _readSegment() async {
     var finished = false;
     var segment = List<String>.from(_cachedSegment);
 
     while (!finished) {
       _printPrompt();
 
-      var line = stdin.readLineSync();
+      var line = await _readLine();
+
       var keywordMatch = Keywords.findKeyword(line);
       var keyword = keywordMatch?.keyword;
 
@@ -62,6 +80,7 @@ class DartRepl {
         line = keywordMatch.text;
         if (line.isNotEmpty) {
           segment.add(line);
+          _lines++;
         }
         _cachedSegment.clear();
         _cachedSegment.addAll(segment);
@@ -118,6 +137,23 @@ class DartRepl {
     }
 
     return segment;
+  }
+
+  Future<String> _readLine() async {
+    if (_inputStream != null) {
+      return Future(_waitForInput);
+    } else {
+      return stdin.readLineSync();
+    }
+  }
+
+  Future<String> _waitForInput() async {
+    if (_inputQueue.isNotEmpty) {
+      return _inputQueue.removeFirst();
+    } else {
+      _inputCompleter = Completer();
+      return await _inputCompleter.future;
+    }
   }
 
   void _printPrompt() {
