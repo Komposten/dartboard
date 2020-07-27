@@ -21,8 +21,8 @@ class Evaluator {
         _codeOutputFile = codeOutputFile;
 
   static String _loadTemplate() {
-    var dartReplDir = utils.getRootDirectory().path;
-    var path = p.join(dartReplDir, 'lib', 'res', 'eval_template.dart');
+    var dartboardDir = utils.getRootDirectory().path;
+    var path = p.join(dartboardDir, 'lib', 'res', 'eval_template.dart');
     return File(path).readAsStringSync();
   }
 

@@ -10,7 +10,7 @@ import 'package:dartboard/src/parser.dart';
 /* TODO(komposten): Maybe add support for some codes like Ctrl+L for clearing screen.
     Will have to read character-by-character for that.
 n */
-class DartRepl {
+class Dartboard {
   static const String prompt = '   > ';
   static const String echoPrompt = '   | ';
 
@@ -25,7 +25,7 @@ class DartRepl {
   bool _running = false;
   Completer<bool> _exitCompleter;
 
-  DartRepl(
+  Dartboard(
       {bool terminateOnExit = true,
       StreamSink<String> outputSink,
       Stream<String> inputStream})
@@ -50,7 +50,7 @@ class DartRepl {
 
   void run() async {
     if (_running) {
-      throw StateError('This DartRepl instance is already running!');
+      throw StateError('This Dartboard instance is already running!');
     }
 
     List<Block> codeBlocks;
@@ -125,7 +125,7 @@ class DartRepl {
 
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
-      var numberedPrompt = _numberedPrompt(i + 1, DartRepl.echoPrompt);
+      var numberedPrompt = _numberedPrompt(i + 1, Dartboard.echoPrompt);
       result.add('$numberedPrompt$line');
     }
 

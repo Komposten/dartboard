@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('REPL tests using custom streams', () {
-    DartRepl repl;
+    Dartboard dartboard;
     StreamController<String> processIn;
     Stream<String> processOut;
 
@@ -16,26 +16,26 @@ void main() {
 
       processOut = outputSink.stream;
       processIn = StreamController();
-      repl = DartRepl(
+      dartboard = Dartboard(
           terminateOnExit: false,
           outputSink: outputSink,
           inputStream: processIn.stream);
-      repl.run();
+      dartboard.run();
     });
 
     test('Test exit', () async {
       processIn.add('exit;');
-      expect(await repl.done, isTrue);
+      expect(await dartboard.done, isTrue);
     }, timeout: Timeout(Duration(seconds: 2)));
 
     test('Test calling run() when already running', () {
-      expect(() => repl.run(), throwsStateError);
+      expect(() => dartboard.run(), throwsStateError);
     });
 
     test('Test restarting after exit', () async {
       processIn.add('exit;');
-      await repl.done;
-      repl.run();
+      await dartboard.done;
+      dartboard.run();
 
       var commands = ['print(\'Test\');', 'end;'];
       var expected = [
