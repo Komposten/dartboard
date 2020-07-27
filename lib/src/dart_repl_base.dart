@@ -1,142 +1,132 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:dart_repl/src/evaluator.dart';
 import 'package:dart_repl/src/keywords.dart';
+import 'package:dart_repl/src/parser.dart';
 
 /* TODO(komposten): Maybe add support for some codes like Ctrl+L for clearing screen.
     Will have to read character-by-character for that.
-
-   TODO(komposten): Add an option to specify input stream.
-    Maybe also output stream. Would require zone-age in the Isolate, though, to
-    pipe it's output to the correct place.
 n */
 class DartRepl {
   static const String prompt = '   > ';
   static const String echoPrompt = '   | ';
 
+  final bool _terminateOnExit;
+  final Parser _parser;
   final Evaluator _evaluator;
-  final List<String> _cachedSegment = <String>[];
-  int _lines = 0;
+  final StreamSink<String> _outputSink;
+  final Stream<String> _inputStream;
+  final Queue<String> _inputQueue = ListQueue();
+  Completer<String> _inputCompleter;
 
-  DartRepl() : _evaluator = Evaluator();
+  bool _running = false;
+  Completer<bool> _exitCompleter;
 
-  void run() async {
-    List<String> segment;
-
-    while (true) {
-      segment = _readSegment();
-
-      if (segment.isNotEmpty && segment.first == Keyword.exit.value) {
-        break;
-      }
-
-      await _eval(segment);
-      stdout.writeln();
+  DartRepl(
+      {bool terminateOnExit = true,
+      StreamSink<String> outputSink,
+      Stream<String> inputStream})
+      : _terminateOnExit = terminateOnExit,
+        _outputSink = outputSink,
+        _inputStream = inputStream,
+        _evaluator = Evaluator(outputSink: outputSink),
+        _parser = Parser() {
+    if (_inputStream != null) {
+      _inputStream.listen((event) {
+        if (_inputCompleter != null && !_inputCompleter.isCompleted) {
+          _inputCompleter.complete(event);
+        } else {
+          _inputQueue.add(event);
+        }
+      });
     }
-
-    exit(0);
   }
 
-  List<String> _readSegment() {
-    var finished = false;
-    var segment = List<String>.from(_cachedSegment);
+  /// Completes with [true] when the repl has exited due to an [exit;] command.
+  Future<bool> get done => _exitCompleter.future;
 
-    while (!finished) {
-      _printPrompt();
+  void run() async {
+    if (_running) {
+      throw StateError('This DartRepl instance is already running!');
+    }
 
-      var line = stdin.readLineSync();
-      var keywordMatch = Keywords.findKeyword(line);
-      var keyword = keywordMatch?.keyword;
+    List<Block> codeBlocks;
+    _running = true;
+    _exitCompleter = Completer();
 
-      if (keyword == Keyword.end) {
-        line = keywordMatch.text;
-        if (line.isNotEmpty) {
-          segment.add(line);
-        }
-        _cachedSegment.clear();
-        _lines = 0;
-        finished = true;
-      } else if (keyword == Keyword.eval) {
-        line = keywordMatch.text;
-        if (line.isNotEmpty) {
-          segment.add(line);
-        }
-        _cachedSegment.clear();
-        _cachedSegment.addAll(segment);
-        finished = true;
-      } else if (keyword == Keyword.exit) {
-        segment.clear();
-        segment.add(Keyword.exit.value);
-        finished = true;
-      } else if (keyword == Keyword.echo) {
-        _echo(segment);
-      } else if (keyword == Keyword.undo) {
-        // Move the cursor up one line to the undo command and clear that line.
-        stdout.write('${Csi.up}${Csi.clearLine}');
+    while (_running) {
+      codeBlocks = await _readCodeBlock();
 
-        if (segment.isNotEmpty) {
-          // Move it up again to the line we want to undo, and clear that line as well.
-          stdout.write('${Csi.up}${Csi.clearLine}');
-          segment.removeLast();
-          _lines--;
-        }
-      } else if (keyword == Keyword.clear) {
-        segment.clear();
-        _lines = 0;
-      } else if (keyword == Keyword.delete) {
-        var index = keywordMatch.indices[0] - 1;
-        if (index >= 0 && index < segment.length) {
-          segment.removeAt(index);
-        }
-        _lines--;
-        _echo(segment);
-      } else if (keyword == Keyword.insert) {
-        var index = keywordMatch.indices[0] - 1;
-        if (index < 0) {
-          index = 0;
-        } else if (index >= segment.length) {
-          index = segment.length;
-        }
+      for (var codeBlock in codeBlocks) {
+        if (codeBlock.text.isNotEmpty &&
+            codeBlock.text.first == Keyword.exit.value) {
+          _running = false;
+          break;
+        } else if (codeBlock.type == BlockType.Eval) {
+          await _eval(codeBlock.text);
+          println();
+        } else if (codeBlock.type == BlockType.CommandSequence) {
+          print(codeBlock.text.join());
+        } else {
+          var text = codeBlock.text;
 
-        segment.insert(index, keywordMatch.text);
-        _lines++;
-        _echo(segment);
-      } else if (keyword == Keyword.edit) {
-        var index = keywordMatch.indices[0] - 1;
-        if (index >= 0 && index < segment.length) {
-          segment.removeAt(index);
-          segment.insert(index, keywordMatch.text);
-        }
+          if (codeBlock.type == BlockType.Echo) {
+            text = _addLineNumbers(text);
+          }
 
-        _echo(segment);
-      } else {
-        segment.add('$line');
-        _lines++;
+          var output = text.join('\n');
+          if (output.isNotEmpty) {
+            println(output);
+          }
+        }
       }
     }
 
-    return segment;
+    if (_terminateOnExit) {
+      exit(0);
+    } else {
+      _exitCompleter.complete(true);
+    }
+  }
+
+  Future<List<Block>> _readCodeBlock() async {
+    _printPrompt();
+    var line = await _readLine();
+    return _parser.parseLine(line);
+  }
+
+  Future<String> _readLine() async {
+    if (_inputStream != null) {
+      return Future(_waitForInput);
+    } else {
+      return stdin.readLineSync();
+    }
+  }
+
+  Future<String> _waitForInput() async {
+    if (_inputQueue.isNotEmpty) {
+      return _inputQueue.removeFirst();
+    } else {
+      _inputCompleter = Completer();
+      return await _inputCompleter.future;
+    }
   }
 
   void _printPrompt() {
-    var lineNumber = _lines + 1;
-    stdout.write(_numberedPrompt(lineNumber, prompt));
+    var lineNumber = _parser.lineCount + 1;
+    print(_numberedPrompt(lineNumber, prompt));
   }
 
-  void _echo(List<String> segment) {
-    stdout.write('========');
-    stdout.writeln(_addLineNumbers(segment));
-  }
+  List<String> _addLineNumbers(List<String> lines) {
+    var result = <String>[];
 
-  String _addLineNumbers(List<String> segment) {
-    var result = '';
-
-    for (var i = 0; i < segment.length; i++) {
-      var line = segment[i];
-      var numberedPrompt = _numberedPrompt(i + 1, echoPrompt);
-      result = '$result\n$numberedPrompt$line';
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var numberedPrompt = _numberedPrompt(i + 1, DartRepl.echoPrompt);
+      result.add('$numberedPrompt$line');
     }
 
     return result;
@@ -151,8 +141,21 @@ class DartRepl {
     return '$numberString${Csi.green}${prompt.substring(promptStart)}${Csi.plain}';
   }
 
-  Future<void> _eval(List<String> segment) async {
-    await _evaluator.evaluate(segment);
+  Future<void> _eval(List<String> code) async {
+    await _evaluator.evaluate(code);
+  }
+
+  void println([String message]) {
+    print('${message ?? ''}\n');
+  }
+
+  void print([String message]) {
+    message = message ?? '';
+    if (_outputSink != null) {
+      _outputSink.add(message);
+    } else {
+      stdout.write(message);
+    }
   }
 }
 

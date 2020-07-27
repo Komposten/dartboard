@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:isolate';
 
-//imports//
+import 'dart:io';
+import 'dart:convert';
 
 String path;
 int offset;
@@ -19,11 +20,12 @@ void main(List<String> args, SendPort port) {
     onError: handleError,
   );
 
-  port.send('//messageFinished//');
+  port.send('completed');
 }
 
 void _main() {
-  //code//
+  var file = File('file');
+print(utf8.encode(file.path));
 }
 
 void handleError(e, StackTrace stackTrace) {
