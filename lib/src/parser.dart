@@ -97,8 +97,6 @@ class Parser {
 
     return result;
   }
-
-  /* TODO(komposten): Re-write the tests to test this class directly.  */
 }
 
 class Block {
