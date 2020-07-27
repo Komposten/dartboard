@@ -6,51 +6,26 @@ import 'package:dart_repl/dart_repl.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Keyword tests', () {
-    Process process;
+  group('REPL tests using custom streams', () {
+    DartRepl repl;
+    StreamController<String> processIn;
     Stream<String> processOut;
 
-    setUp(() async {
-      process =
-          await Process.start('dart', ['bin/dart_repl.dart'], runInShell: true);
-      processOut = process.stdout.transform(utf8.decoder);
+    setUp(() {
+      var outputSink = StreamController<String>();
+
+      processOut = outputSink.stream;
+      processIn = StreamController();
+      repl = DartRepl(outputSink: outputSink, inputStream: processIn.stream);
+      repl.run();
     });
 
     test('Test exit', () async {
-      process.stdin.writeln('exit;');
-      expect(await process.exitCode, equals(0));
+      //processIn.add('exit;');
+      fail('Currently not possible to determine if DartRepl has exited.');
     });
 
-    test('Test echo', () async {
-      var commands = ['var x = 5;', 'print(x);', 'echo;'];
-      var expected = [
-        '1  > ',
-        '2  > ',
-        '3  > ',
-        // Check the echo output to verify that the inputted code was kept.
-        '========',
-        '\n1  | var x = 5;',
-        '\n2  | print(x);',
-        '\n3  > ',
-      ];
-
-      await _testCommands(commands, expected, process.stdin, processOut);
-    });
-
-    test('Test end', () async {
-      var commands = ['var x = 5;', 'print(x);', 'end;'];
-      var expected = [
-        '1  > ',
-        '2  > ',
-        '3  > ',
-        '5\n',
-        '\n1  > ',
-      ];
-
-      await _testCommands(commands, expected, process.stdin, processOut);
-    });
-
-    test('Test eval', () async {
+    test('Test eval and echo', () async {
       var commands = ['var x = 5;', 'print(x);', 'eval;', 'echo;'];
       var expected = [
         '1  > ',
@@ -65,44 +40,7 @@ void main() {
         '\n3  > ',
       ];
 
-      await _testCommands(commands, expected, process.stdin, processOut);
-    });
-
-    test('Test undo with nothing to undo', () async {
-      var commands = ['undo;'];
-      var expected = [
-        '1  > ',
-        '${Csi.up}${Csi.clearLine}1  > ',
-      ];
-
-      await _testCommands(commands, expected, process.stdin, processOut);
-    });
-
-    test('Test undo with code to undo', () async {
-      var commands = ['var x = 5;', 'print(x);', 'undo;'];
-      var expected = [
-        '1  > ',
-        '2  > ',
-        '3  > ',
-        '${Csi.up}${Csi.clearLine}${Csi.up}${Csi.clearLine}2  > ',
-      ];
-
-      await _testCommands(commands, expected, process.stdin, processOut);
-    });
-
-    test('Test clear', () async {
-      var commands = ['var x = 5;', 'print(x);', 'clear;', 'echo;'];
-      var expected = [
-        '1  > ',
-        '2  > ',
-        '3  > ',
-        '1  > ',
-        // Check the echo output to verify that the inputted code was cleared.
-        '========',
-        '\n1  > ',
-      ];
-
-      await _testCommands(commands, expected, process.stdin, processOut);
+      await _testCommands(commands, expected, processIn, processOut);
     });
 
     test('Test delete', () async {
@@ -118,33 +56,50 @@ void main() {
         '\n3  > ',
       ];
 
-      await _testCommands(commands, expected, process.stdin, processOut);
+      await _testCommands(commands, expected, processIn, processOut);
+    });
+  });
+
+  group('REPL tests using default streams', () {
+    Process process;
+    Stream<String> processOut;
+    StreamSink<String> processIn;
+
+    setUp(() async {
+      process =
+          await Process.start('dart', ['bin/dart_repl.dart'], runInShell: true);
+      processOut = process.stdout.transform(utf8.decoder);
+
+      var inStreamController = StreamController<String>();
+      inStreamController.stream.listen((event) => process.stdin.writeln(event));
+      processIn = inStreamController;
     });
 
-    test('Test insert', () async {
-      var commands = ['var x = 5;', 'print(x);', 'insert:2;var y = 10;'];
+    test('Test exit', () async {
+      processIn.add('exit;');
+      expect(await process.exitCode, equals(0));
+    });
+
+    test('Test eval and echo', () async {
+      var commands = ['var x = 5;', 'print(x);', 'eval;', 'echo;'];
       var expected = [
         '1  > ',
         '2  > ',
         '3  > ',
+        '5\n',
+        '\n3  > ',
         // Check the echo output to verify that the inputted code was kept.
         '========',
         '\n1  | var x = 5;',
-        '\n2  | var y = 10;',
-        '\n3  | print(x);',
-        '\n4  > ',
+        '\n2  | print(x);',
+        '\n3  > ',
       ];
 
-      await _testCommands(commands, expected, process.stdin, processOut);
+      await _testCommands(commands, expected, processIn, processOut);
     });
 
-    test('Test edit', () async {
-      var commands = [
-        'var x = 5;',
-        'var y = 10;',
-        'print(x);',
-        'edit:2;var z = 15;'
-      ];
+    test('Test delete', () async {
+      var commands = ['var x = 5;', 'var y = 10;', 'print(x);', 'delete:2;'];
       var expected = [
         '1  > ',
         '2  > ',
@@ -152,22 +107,17 @@ void main() {
         '4  > ',
         '========',
         '\n1  | var x = 5;',
-        '\n2  | var z = 15;',
-        '\n3  | print(x);',
-        '\n4  > ',
+        '\n2  | print(x);',
+        '\n3  > ',
       ];
 
-      await _testCommands(commands, expected, process.stdin, processOut);
-    });
-
-    tearDown(() {
-      process?.kill();
+      await _testCommands(commands, expected, processIn, processOut);
     });
   });
 }
 
 Future<void> _testCommands(List<String> commands, List<String> expectedLines,
-    IOSink processIn, Stream<String> processOut) async {
+    StreamSink<String> processIn, Stream<String> processOut) async {
   var jobCompleter = Completer();
 
   var expected = expectedLines.join();
@@ -185,7 +135,8 @@ Future<void> _testCommands(List<String> commands, List<String> expectedLines,
   });
 
   for (var command in commands) {
-    processIn.writeln(command);
+    print('Sending command: $command');
+    processIn.add(command);
   }
 
   // Wait for all commands to finish before returning, or time out if it takes too long.
