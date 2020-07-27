@@ -24,7 +24,7 @@ class DartRepl {
   DartRepl({StreamSink<String> outputSink, Stream<String> inputStream})
       : _outputSink = outputSink,
         _inputStream = inputStream,
-        _evaluator = Evaluator(),
+        _evaluator = Evaluator(outputSink: outputSink),
         _parser = Parser() {
     if (_inputStream != null) {
       _inputStream.listen((event) {
