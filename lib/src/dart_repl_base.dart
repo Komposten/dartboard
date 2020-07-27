@@ -52,6 +52,8 @@ class DartRepl {
         } else if (codeBlock.type == BlockType.Eval) {
           await _eval(codeBlock.text);
           println();
+        } else if (codeBlock.type == BlockType.CommandSequence) {
+          print(codeBlock.text.join());
         } else {
           var text = codeBlock.text;
 
@@ -60,9 +62,8 @@ class DartRepl {
           }
 
           var output = text.join('\n');
-          print(output);
           if (output.isNotEmpty) {
-            println();
+            println(output);
           }
         }
       }

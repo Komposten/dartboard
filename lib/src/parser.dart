@@ -49,7 +49,7 @@ class Parser {
         _lines--;
       }
 
-      blocks.add(Block(result, BlockType.Plain));
+      blocks.add(Block(result, BlockType.CommandSequence));
     } else if (keyword == Keyword.clear) {
       _code.clear();
       _lines = 0;
@@ -107,5 +107,5 @@ class Block {
 }
 
 enum BlockType {
-  Eval, Echo, Plain
+  Eval, Echo, Plain, CommandSequence
 }

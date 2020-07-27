@@ -59,7 +59,7 @@ void main() {
 
       expect(blocks.length, equals(1));
       _expectBlock(
-          blocks.first, ['${Csi.up}${Csi.clearLine}'], BlockType.Plain);
+          blocks.first, ['${Csi.up}${Csi.clearLine}'], BlockType.CommandSequence);
     });
 
     test('Test undo with code to undo', () async {
@@ -72,7 +72,7 @@ void main() {
       _expectBlock(
           blocks.first,
           ['${Csi.up}${Csi.clearLine}', '${Csi.up}${Csi.clearLine}'],
-          BlockType.Plain);
+          BlockType.CommandSequence);
 
       // Check the echo output to verify that the inputted code was cleared.
       blocks = parser.parseLine(commands[3]);
