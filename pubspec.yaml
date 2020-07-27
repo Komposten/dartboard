@@ -1,6 +1,6 @@
 name: dartboard
 description: A shell/REPL interface for executing dart code directly from the command line.
-version: 0.0.1
+version: 0.1.0
 homepage: https://github.com/komposten
 repository: https://www.github.com/komposten/dartboard
 issue_tracker: https://www.github.com/komposten/dartboard/issues
