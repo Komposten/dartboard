@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:dart_repl/src/evaluator.dart';
 import 'package:dart_repl/src/keywords.dart';
+import 'package:dart_repl/src/parser.dart';
 
 /* TODO(komposten): Maybe add support for some codes like Ctrl+L for clearing screen.
     Will have to read character-by-character for that.
@@ -13,19 +14,18 @@ class DartRepl {
   static const String prompt = '   > ';
   static const String echoPrompt = '   | ';
 
+  final Parser _parser;
   final Evaluator _evaluator;
-  final List<String> _cachedSegment = <String>[];
   final StreamSink<String> _outputSink;
   final Stream<String> _inputStream;
   final Queue<String> _inputQueue = ListQueue();
   Completer<String> _inputCompleter;
 
-  int _lines = 0;
-
   DartRepl({StreamSink<String> outputSink, Stream<String> inputStream})
       : _outputSink = outputSink,
         _inputStream = inputStream,
-        _evaluator = Evaluator() {
+        _evaluator = Evaluator(),
+        _parser = Parser() {
     if (_inputStream != null) {
       _inputStream.listen((event) {
         if (_inputCompleter != null && !_inputCompleter.isCompleted) {
@@ -38,103 +38,43 @@ class DartRepl {
   }
 
   void run() async {
-    List<String> segment;
+    List<Block> codeBlocks;
+    var running = true;
 
-    while (true) {
-      segment = await _readSegment();
+    while (running) {
+      codeBlocks = await _readCodeBlock();
 
-      if (segment.isNotEmpty && segment.first == Keyword.exit.value) {
-        break;
+      for (var codeBlock in codeBlocks) {
+        if (codeBlock.text.isNotEmpty &&
+            codeBlock.text.first == Keyword.exit.value) {
+          running = false;
+          break;
+        } else if (codeBlock.type == BlockType.Eval) {
+          await _eval(codeBlock.text);
+          println();
+        } else {
+          var text = codeBlock.text;
+
+          if (codeBlock.type == BlockType.Echo) {
+            text = _addLineNumbers(text);
+          }
+
+          var output = text.join('\n');
+          print(output);
+          if (output.isNotEmpty) {
+            println();
+          }
+        }
       }
-
-      await _eval(segment);
-      println();
     }
 
     exit(0);
   }
 
-  Future<List<String>> _readSegment() async {
-    var finished = false;
-    var segment = List<String>.from(_cachedSegment);
-
-    while (!finished) {
-      _printPrompt();
-
-      var line = await _readLine();
-
-      var keywordMatch = Keywords.findKeyword(line);
-      var keyword = keywordMatch?.keyword;
-
-      if (keyword == Keyword.end) {
-        line = keywordMatch.text;
-        if (line.isNotEmpty) {
-          segment.add(line);
-        }
-        _cachedSegment.clear();
-        _lines = 0;
-        finished = true;
-      } else if (keyword == Keyword.eval) {
-        line = keywordMatch.text;
-        if (line.isNotEmpty) {
-          segment.add(line);
-          _lines++;
-        }
-        _cachedSegment.clear();
-        _cachedSegment.addAll(segment);
-        finished = true;
-      } else if (keyword == Keyword.exit) {
-        segment.clear();
-        segment.add(Keyword.exit.value);
-        finished = true;
-      } else if (keyword == Keyword.echo) {
-        _echo(segment);
-      } else if (keyword == Keyword.undo) {
-        // Move the cursor up one line to the undo command and clear that line.
-        print('${Csi.up}${Csi.clearLine}');
-
-        if (segment.isNotEmpty) {
-          // Move it up again to the line we want to undo, and clear that line as well.
-          print('${Csi.up}${Csi.clearLine}');
-          segment.removeLast();
-          _lines--;
-        }
-      } else if (keyword == Keyword.clear) {
-        segment.clear();
-        _lines = 0;
-      } else if (keyword == Keyword.delete) {
-        var index = keywordMatch.indices[0] - 1;
-        if (index >= 0 && index < segment.length) {
-          segment.removeAt(index);
-        }
-        _lines--;
-        _echo(segment);
-      } else if (keyword == Keyword.insert) {
-        var index = keywordMatch.indices[0] - 1;
-        if (index < 0) {
-          index = 0;
-        } else if (index >= segment.length) {
-          index = segment.length;
-        }
-
-        segment.insert(index, keywordMatch.text);
-        _lines++;
-        _echo(segment);
-      } else if (keyword == Keyword.edit) {
-        var index = keywordMatch.indices[0] - 1;
-        if (index >= 0 && index < segment.length) {
-          segment.removeAt(index);
-          segment.insert(index, keywordMatch.text);
-        }
-
-        _echo(segment);
-      } else {
-        segment.add('$line');
-        _lines++;
-      }
-    }
-
-    return segment;
+  Future<List<Block>> _readCodeBlock() async {
+    _printPrompt();
+    var line = await _readLine();
+    return _parser.parseLine(line);
   }
 
   Future<String> _readLine() async {
@@ -155,22 +95,17 @@ class DartRepl {
   }
 
   void _printPrompt() {
-    var lineNumber = _lines + 1;
+    var lineNumber = _parser.lineCount + 1;
     print(_numberedPrompt(lineNumber, prompt));
   }
 
-  void _echo(List<String> segment) {
-    print('========');
-    println(_addLineNumbers(segment));
-  }
+  List<String> _addLineNumbers(List<String> lines) {
+    var result = <String>[];
 
-  String _addLineNumbers(List<String> segment) {
-    var result = '';
-
-    for (var i = 0; i < segment.length; i++) {
-      var line = segment[i];
-      var numberedPrompt = _numberedPrompt(i + 1, echoPrompt);
-      result = '$result\n$numberedPrompt$line';
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var numberedPrompt = _numberedPrompt(i + 1, DartRepl.echoPrompt);
+      result.add('$numberedPrompt$line');
     }
 
     return result;
@@ -185,8 +120,8 @@ class DartRepl {
     return '$numberString${Csi.green}${prompt.substring(promptStart)}${Csi.plain}';
   }
 
-  Future<void> _eval(List<String> segment) async {
-    await _evaluator.evaluate(segment);
+  Future<void> _eval(List<String> code) async {
+    await _evaluator.evaluate(code);
   }
 
   void println([String message]) {
