@@ -26,7 +26,15 @@ jobs:
     - name: Install dependencies
       run: pub get
     - name: Run tests
-      run: pub run test
+      run: pub run test --coverage .coverage
+    - name: Format test coverage as LCOV
+      run: pub run coverage:format_coverage --lcov --packages=.packages --report-on lib --in .coverage/ --out .coverage/lcov.info
+    - name: Upload to CodeCov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./.coverage/lcov.info
+
 
   analyse:
     name: Code analysis

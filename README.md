@@ -1,6 +1,6 @@
 # dart_repl
 
-[![Dart CI](https://github.com/Komposten/dart_repl/workflows/Dart%20CI/badge.svg)](https://github.com/Komposten/dart_repl/actions?query=workflow%3A"Dart+CI")
+[![Dart CI](https://github.com/Komposten/dart_repl/workflows/Dart%20CI/badge.svg)](https://github.com/Komposten/dart_repl/actions?query=workflow%3A"Dart+CI") [![codecov](https://codecov.io/gh/Komposten/dart_repl/branch/master/graph/badge.svg?token=O0NHEQR9UL)](https://codecov.io/gh/Komposten/dart_repl)
 
 **A REPL interface for executing dart code directly from the command line.**
 
