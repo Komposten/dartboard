@@ -3,9 +3,9 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:dart_repl/src/evaluator.dart';
-import 'package:dart_repl/src/keywords.dart';
-import 'package:dart_repl/src/parser.dart';
+import 'package:dartboard/src/evaluator.dart';
+import 'package:dartboard/src/keywords.dart';
+import 'package:dartboard/src/parser.dart';
 
 /* TODO(komposten): Maybe add support for some codes like Ctrl+L for clearing screen.
     Will have to read character-by-character for that.

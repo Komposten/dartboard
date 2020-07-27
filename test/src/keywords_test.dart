@@ -1,4 +1,4 @@
-import 'package:dart_repl/src/keywords.dart';
+import 'package:dartboard/src/keywords.dart';
 import 'package:test/test.dart';
 
 void main() {

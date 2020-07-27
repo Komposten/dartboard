@@ -1,5 +1,5 @@
-import 'package:dart_repl/dart_repl.dart';
-import 'package:dart_repl/src/parser.dart';
+import 'package:dartboard/dartboard.dart';
+import 'package:dartboard/src/parser.dart';
 import 'package:test/test.dart';
 
 void main() {

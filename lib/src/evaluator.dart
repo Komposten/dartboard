@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:dart_repl/src/utils.dart' as utils;
+import 'package:dartboard/src/utils.dart' as utils;
 import 'package:path/path.dart' as p;
 
 class Evaluator {
@@ -76,7 +76,7 @@ class Evaluator {
   }
 
   Directory _getTempDir() {
-    final parentPath = p.join(Directory.systemTemp.path, 'dart_repl');
+    final parentPath = p.join(Directory.systemTemp.path, 'dartboard');
     final parentDir = Directory(parentPath);
 
     if (!parentDir.existsSync()) {

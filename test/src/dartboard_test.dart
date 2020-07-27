@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dart_repl/dart_repl.dart';
+import 'package:dartboard/dartboard.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -91,7 +91,7 @@ void main() {
 
     setUp(() async {
       process =
-          await Process.start('dart', ['bin/dart_repl.dart'], runInShell: true);
+          await Process.start('dart', ['bin/dartboard.dart'], runInShell: true);
       processOut = process.stdout.transform(utf8.decoder);
 
       var inStreamController = StreamController<String>();

@@ -1,10 +1,9 @@
-#TODO(komposten): Come up with a name that is easy to remember and write.
-name: dart_repl
-description: A REPL interface for executing dart code directly from the command line.
+name: dartboard
+description: A shell/REPL interface for executing dart code directly from the command line.
 version: 0.0.1
 homepage: https://github.com/komposten
-repository: https://www.github.com/komposten/dart_repl
-issue_tracker: https://www.github.com/komposten/dart_repl/issues
+repository: https://www.github.com/komposten/dartboard
+issue_tracker: https://www.github.com/komposten/dartboard/issues
 author: Jakob Hjelm <komposten585@gmail.com>
 
 environment:

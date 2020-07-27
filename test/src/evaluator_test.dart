@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dart_repl/src/evaluator.dart';
-import 'package:dart_repl/src/utils.dart';
+import 'package:dartboard/src/evaluator.dart';
+import 'package:dartboard/src/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -54,7 +54,7 @@ void main() {
 }
 
 File _getCodeFile() {
-  final parentPath = p.join(Directory.systemTemp.path, 'dart_repl');
+  final parentPath = p.join(Directory.systemTemp.path, 'dartboard');
   final parentDir = Directory(parentPath);
 
   if (!parentDir.existsSync()) {

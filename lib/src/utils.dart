@@ -20,8 +20,8 @@ Directory _findRootDirectory(Directory startingPoint) {
   while (!foundRoot) {
     var dirname = p.basename(directory.path);
 
-    // Check if we are in a folder called dart_repl containing a pubspec file
-    if (dirname == 'dart_repl') {
+    // Check if we are in a folder called dartboard containing a pubspec file
+    if (dirname == 'dartboard') {
       var files = directory.listSync();
       foundRoot = files.any((element) => element.path.endsWith('pubspec.yaml'));
     }

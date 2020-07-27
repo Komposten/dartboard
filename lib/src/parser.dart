@@ -1,5 +1,5 @@
-import 'package:dart_repl/dart_repl.dart';
-import 'package:dart_repl/src/keywords.dart';
+import 'package:dartboard/dartboard.dart';
+import 'package:dartboard/src/keywords.dart';
 
 class Parser {
   final _code = <String>[];

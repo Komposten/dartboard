@@ -1,4 +1,4 @@
-import 'package:dart_repl/dart_repl.dart';
+import 'package:dartboard/dartboard.dart';
 
 void main() {
   final repl = DartRepl();

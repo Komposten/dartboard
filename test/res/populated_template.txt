@@ -39,7 +39,7 @@ void handleError(e, StackTrace stackTrace) {
     var line = int.tryParse(match.group(2));
     var column = int.tryParse(match.group(3));
 
-    var newText = '[dart_repl code]:${line - offset}:$column';
+    var newText = '[dartboard code]:${line - offset}:$column';
     traceString = traceString.replaceFirst(text, newText);
   }
 
