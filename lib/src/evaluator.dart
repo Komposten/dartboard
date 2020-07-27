@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:dart_repl/src/utils.dart' as utils;
 import 'package:path/path.dart' as p;
 
 class Evaluator {
@@ -9,17 +10,19 @@ class Evaluator {
 
   final String _template;
   final StreamSink<String> _outputSink;
+  final File _codeOutputFile;
 
   String _code;
   int _offset;
 
-  Evaluator({StreamSink<String> outputSink})
+  Evaluator({StreamSink<String> outputSink, File codeOutputFile})
       : _outputSink = outputSink,
-        _template = _loadTemplate();
+        _template = _loadTemplate(),
+        _codeOutputFile = codeOutputFile;
 
   static String _loadTemplate() {
-    var dartReplDir = p.dirname(Platform.script.toFilePath());
-    var path = p.join(dartReplDir, '..', 'lib', 'res', 'eval_template.dart');
+    var dartReplDir = utils.getRootDirectory().path;
+    var path = p.join(dartReplDir, 'lib', 'res', 'eval_template.dart');
     return File(path).readAsStringSync();
   }
 
@@ -58,12 +61,18 @@ class Evaluator {
   }
 
   File _writeCodeFile() {
-    final tempDir = _getTempDir();
-    final tempFile = File(p.join(tempDir.path, 'script.dart'));
+    File file;
 
-    tempFile.createSync();
-    tempFile.writeAsStringSync(_code);
-    return tempFile;
+    if (_codeOutputFile != null) {
+      file = _codeOutputFile;
+    } else {
+      final tempDir = _getTempDir();
+      file = File(p.join(tempDir.path, 'script.dart'));
+    }
+
+    file.createSync();
+    file.writeAsStringSync(_code);
+    return file;
   }
 
   Directory _getTempDir() {
