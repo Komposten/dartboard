@@ -16,13 +16,34 @@ void main() {
 
       processOut = outputSink.stream;
       processIn = StreamController();
-      repl = DartRepl(outputSink: outputSink, inputStream: processIn.stream);
+      repl = DartRepl(terminateOnExit: false, outputSink: outputSink, inputStream: processIn.stream);
       repl.run();
     });
 
     test('Test exit', () async {
-      //processIn.add('exit;');
-      fail('Currently not possible to determine if DartRepl has exited.');
+      processIn.add('exit;');
+      expect(await repl.done, isTrue);
+    }, timeout: Timeout(Duration(seconds: 2)));
+
+    test('Test calling run() when already running', () {
+      expect(() => repl.run(), throwsStateError);
+    });
+
+    test('Test restarting after exit', () async {
+      processIn.add('exit;');
+      await repl.done;
+      repl.run();
+
+      var commands = ['print(\'Test\');', 'end;'];
+      var expected = [
+        '1  > ',
+        '1  > ', // Two 1's since we restarted.
+        '2  > ',
+        'Test\n',
+        '\n1  > '
+      ];
+
+      await _testCommands(commands, expected, processIn, processOut);
     });
 
     test('Test eval and echo', () async {
@@ -135,7 +156,6 @@ Future<void> _testCommands(List<String> commands, List<String> expectedLines,
   });
 
   for (var command in commands) {
-    print('Sending command: $command');
     processIn.add(command);
   }
 

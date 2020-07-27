@@ -42,7 +42,6 @@ void main() {
       var actual = '';
 
       controller.stream.listen((event) {
-        print('Event: $event');
         actual += event;
       });
 

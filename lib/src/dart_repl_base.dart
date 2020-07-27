@@ -14,6 +14,7 @@ class DartRepl {
   static const String prompt = '   > ';
   static const String echoPrompt = '   | ';
 
+  final bool _terminateOnExit;
   final Parser _parser;
   final Evaluator _evaluator;
   final StreamSink<String> _outputSink;
@@ -21,8 +22,12 @@ class DartRepl {
   final Queue<String> _inputQueue = ListQueue();
   Completer<String> _inputCompleter;
 
-  DartRepl({StreamSink<String> outputSink, Stream<String> inputStream})
-      : _outputSink = outputSink,
+  bool _running = false;
+  Completer<bool> _exitCompleter;
+
+  DartRepl({bool terminateOnExit = true, StreamSink<String> outputSink, Stream<String> inputStream})
+      : _terminateOnExit = terminateOnExit,
+        _outputSink = outputSink,
         _inputStream = inputStream,
         _evaluator = Evaluator(outputSink: outputSink),
         _parser = Parser() {
@@ -37,17 +42,25 @@ class DartRepl {
     }
   }
 
-  void run() async {
-    List<Block> codeBlocks;
-    var running = true;
+  /// Completes with [true] when the repl has exited due to an [exit;] command.
+  Future<bool> get done => _exitCompleter.future;
 
-    while (running) {
+  void run() async {
+    if (_running) {
+      throw StateError('This DartRepl instance is already running!');
+    }
+
+    List<Block> codeBlocks;
+    _running = true;
+    _exitCompleter = Completer();
+
+    while (_running) {
       codeBlocks = await _readCodeBlock();
 
       for (var codeBlock in codeBlocks) {
         if (codeBlock.text.isNotEmpty &&
             codeBlock.text.first == Keyword.exit.value) {
-          running = false;
+          _running = false;
           break;
         } else if (codeBlock.type == BlockType.Eval) {
           await _eval(codeBlock.text);
@@ -69,7 +82,11 @@ class DartRepl {
       }
     }
 
-    exit(0);
+    if (_terminateOnExit) {
+      exit(0);
+    } else {
+      _exitCompleter.complete(true);
+    }
   }
 
   Future<List<Block>> _readCodeBlock() async {

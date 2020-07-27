@@ -32,8 +32,7 @@ class Parser {
       blocks.add(Block(_code, BlockType.Eval));
     } else if (keyword == Keyword.exit) {
       _code.clear();
-      _code.add(Keyword.exit.value);
-      blocks.add(Block(_code, BlockType.Plain));
+      blocks.add(Block([Keyword.exit.value], BlockType.Plain));
     } else if (keyword == Keyword.echo) {
       blocks.addAll(_echo(_code));
     } else if (keyword == Keyword.undo) {
