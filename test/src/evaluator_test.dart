@@ -27,7 +27,7 @@ void main() {
       evaluator.evaluate(code);
 
       var expected =
-          _readFile(p.join(resourceDir.path, 'test_code_insertion.dart'));
+          _readFile(p.join(resourceDir.path, 'populated_template.txt'));
       var actual = _readFile(codeFile.path);
 
       expect(actual, equals(expected));
