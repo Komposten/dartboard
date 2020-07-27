@@ -25,7 +25,10 @@ class DartRepl {
   bool _running = false;
   Completer<bool> _exitCompleter;
 
-  DartRepl({bool terminateOnExit = true, StreamSink<String> outputSink, Stream<String> inputStream})
+  DartRepl(
+      {bool terminateOnExit = true,
+      StreamSink<String> outputSink,
+      Stream<String> inputStream})
       : _terminateOnExit = terminateOnExit,
         _outputSink = outputSink,
         _inputStream = inputStream,

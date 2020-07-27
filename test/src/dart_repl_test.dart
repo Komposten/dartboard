@@ -16,7 +16,10 @@ void main() {
 
       processOut = outputSink.stream;
       processIn = StreamController();
-      repl = DartRepl(terminateOnExit: false, outputSink: outputSink, inputStream: processIn.stream);
+      repl = DartRepl(
+          terminateOnExit: false,
+          outputSink: outputSink,
+          inputStream: processIn.stream);
       repl.run();
     });
 
