@@ -58,8 +58,8 @@ void main() {
       var blocks = parser.parseLine('undo;');
 
       expect(blocks.length, equals(1));
-      _expectBlock(
-          blocks.first, ['${Csi.up}${Csi.clearLine}'], BlockType.CommandSequence);
+      _expectBlock(blocks.first, ['${Csi.up}${Csi.clearLine}'],
+          BlockType.CommandSequence);
     });
 
     test('Test undo with code to undo', () async {
