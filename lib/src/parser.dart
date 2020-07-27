@@ -35,7 +35,7 @@ class Parser {
       _code.add(Keyword.exit.value);
       blocks.add(Block(_code, BlockType.Plain));
     } else if (keyword == Keyword.echo) {
-        blocks.addAll(_echo(_code));
+      blocks.addAll(_echo(_code));
     } else if (keyword == Keyword.undo) {
       var result = <String>[];
 
@@ -106,6 +106,4 @@ class Block {
   Block(List<String> text, this.type) : text = text.toList();
 }
 
-enum BlockType {
-  Eval, Echo, Plain, CommandSequence
-}
+enum BlockType { Eval, Echo, Plain, CommandSequence }
