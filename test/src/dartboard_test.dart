@@ -148,6 +148,10 @@ Future<void> _testCommands(List<String> commands, List<String> expectedLines,
   var actual = '';
 
   processOut.listen((line) {
+    if (line.startsWith('Welcome')) {
+      return;
+    }
+    
     // Remove ANSI colour tags
     line = line.replaceAll(RegExp('\x1b\\[[^\x1b]+?m'), '');
 
