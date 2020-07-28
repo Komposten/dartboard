@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 
 class Template {
   static const defaultTemplateUrl =
-      'https://raw.githubusercontent.com/Komposten/dartboard/0.1.0/lib/res/eval_template.dart';
+      'https://raw.githubusercontent.com/Komposten/dartboard/${utils.dartboardVersion}/lib/res/eval_template.dart';
 
   final String _templateUrl;
   final _completer = Completer<bool>();

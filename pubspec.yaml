@@ -16,3 +16,4 @@ dev_dependencies:
   coverage: ^0.14.0
   pedantic: ^1.9.0
   test: ^1.15.0
+  yaml: ^2.2.1

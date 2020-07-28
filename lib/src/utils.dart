@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+const dartboardVersion = '0.1.0';
+
 Directory getRootDirectory() {
   var scriptUri = Platform.script;
   var baseDir = Directory.current;
