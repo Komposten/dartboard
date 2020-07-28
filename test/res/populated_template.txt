@@ -23,7 +23,7 @@ void main(List<String> args, SendPort port) {
   port.send('completed');
 }
 
-void _main() {
+void _main() async {
   var file = File('file');
 print(utf8.encode(file.path));
 }

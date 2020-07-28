@@ -22,7 +22,7 @@ void main(List<String> args, SendPort port) {
   port.send('//messageFinished//');
 }
 
-void _main() {
+void _main() async {
   //code//
 }
 
