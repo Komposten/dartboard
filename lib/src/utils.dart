@@ -41,7 +41,7 @@ Directory _findRootDirectory(Directory startingPoint) {
   return directory;
 }
 
-Directory getTempDir({bool root}) {
+Directory getTempDir({bool root = false}) {
   final parentPath = p.join(Directory.systemTemp.path, 'dartboard');
   final parentDir = Directory(parentPath);
 

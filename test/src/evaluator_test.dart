@@ -16,15 +16,17 @@ void main() {
       resourceDir = _getResourceDirectory();
     });
 
-    test('code added correctly', () {
+    test('code added correctly', () async {
       var evaluator = Evaluator(codeOutputFile: codeFile);
+
       var code = [
         'import \'dart:io\';',
         'var file = File(\'file\');',
         'print(utf8.encode(file.path));',
         'import \'dart:convert\';'
       ];
-      evaluator.evaluate(code);
+      await evaluator.ready;
+      await evaluator.evaluate(code);
 
       var expected =
           _readFile(p.join(resourceDir.path, 'populated_template.txt'));
@@ -45,6 +47,7 @@ void main() {
         actual += event;
       });
 
+      await evaluator.ready;
       await evaluator.evaluate(['print(\'Hello World!\');']);
 
       expect(actual, equals(expected));
