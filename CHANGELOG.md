@@ -1,3 +1,11 @@
+## 0.1.1
+**Additions**
+- Allow usage of `await` in Dartboard code.
+
+**Fixes**
+- Infinite loop when starting Dashboard after installing it using `pub global activate --source git`.
+- Template file cannot be loaded if Dashboard was installed using `pub global activate --source git`.
+
 ## 0.1.0
 
 First functional release version.
