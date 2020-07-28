@@ -57,6 +57,9 @@ class Dartboard {
     _running = true;
     _exitCompleter = Completer();
 
+    //Make sure the evaluator is ready before starting.
+    await _evaluator.ready;
+
     while (_running) {
       codeBlocks = await _readCodeBlock();
 

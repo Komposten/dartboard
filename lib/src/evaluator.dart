@@ -2,13 +2,14 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:dartboard/src/template.dart';
 import 'package:dartboard/src/utils.dart' as utils;
 import 'package:path/path.dart' as p;
 
 class Evaluator {
-  static const String isolateCompleted = 'completed';
+  static const isolateCompleted = 'completed';
+  static Template _template;
 
-  final String _template;
   final StreamSink<String> _outputSink;
   final File _codeOutputFile;
 
@@ -17,16 +18,17 @@ class Evaluator {
 
   Evaluator({StreamSink<String> outputSink, File codeOutputFile})
       : _outputSink = outputSink,
-        _template = _loadTemplate(),
-        _codeOutputFile = codeOutputFile;
-
-  static String _loadTemplate() {
-    var dartboardDir = utils.getRootDirectory().path;
-    var path = p.join(dartboardDir, 'lib', 'res', 'eval_template.dart');
-    return File(path).readAsStringSync();
+        _codeOutputFile = codeOutputFile {
+    _template ??= Template();
   }
 
+  Future<bool> get ready async => _template.ready;
+
   Future<void> evaluate(List<String> lines) async {
+    if (_template.code == null) {
+      throw StateError('evaluate must not be called before ready is true');
+    }
+
     _prepareCode(lines);
     var file = _writeCodeFile();
     await _evalInIsolate(file);
@@ -44,9 +46,9 @@ class Evaluator {
     var codeString = lines.join('\n');
 
     // Add the imports
-    _code = _template.replaceFirst('//imports//', importString);
+    _code = _template.code.replaceFirst('//imports//', importString);
     // Count the number of lines before //code//
-    _offset = _linesBefore('//code//', _template);
+    _offset = _linesBefore('//code//', _template.code);
     // Add the code and finish message
     _code = _code
         .replaceFirst('//code//', codeString)
@@ -66,24 +68,13 @@ class Evaluator {
     if (_codeOutputFile != null) {
       file = _codeOutputFile;
     } else {
-      final tempDir = _getTempDir();
+      final tempDir = utils.getTempDir();
       file = File(p.join(tempDir.path, 'script.dart'));
     }
 
     file.createSync();
     file.writeAsStringSync(_code);
     return file;
-  }
-
-  Directory _getTempDir() {
-    final parentPath = p.join(Directory.systemTemp.path, 'dartboard');
-    final parentDir = Directory(parentPath);
-
-    if (!parentDir.existsSync()) {
-      parentDir.createSync();
-    }
-
-    return parentDir.createTempSync();
   }
 
   Future<void> _evalInIsolate(File tempFile) async {

@@ -28,9 +28,54 @@ Directory _findRootDirectory(Directory startingPoint) {
 
     // If we're not in the correct folder, move to the parent
     if (!foundRoot) {
-      directory = directory.parent;
+      var parent = directory.parent;
+
+      if (parent.path == directory.path) {
+        throw ResourceError('Could not find dartboard\'s root directory!');
+      }
+
+      directory = parent;
     }
   }
 
   return directory;
+}
+
+Directory getTempDir({bool root}) {
+  final parentPath = p.join(Directory.systemTemp.path, 'dartboard');
+  final parentDir = Directory(parentPath);
+
+  if (!parentDir.existsSync()) {
+    parentDir.createSync();
+  }
+
+  if (root) {
+    return parentDir;
+  } else {
+    return parentDir.createTempSync();
+  }
+}
+
+void deleteSilently(File file) {
+  try {
+    if (file.existsSync()) {
+      file.deleteSync();
+    }
+  } catch (_) {
+    //ignore
+  }
+}
+
+class ResourceError extends Error {
+  String message;
+
+  ResourceError(this.message);
+
+  @override
+  String toString() {
+    if (message != null) {
+      return 'Resource error: ' + message;
+    }
+    return 'Resource error';
+  }
 }
